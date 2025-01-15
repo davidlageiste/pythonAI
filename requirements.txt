@@ -1,0 +1,12 @@
+dateparser
+transformers
+faiss_gpu
+langchain_community
+langchain
+tiktoken
+unicode
+python-docx
+azure-functions
+azure-eventgrid
+openai==1.56.1
+httpx==0.27.2
