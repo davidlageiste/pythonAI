@@ -1,6 +1,6 @@
 import azure.functions as func
 import logging
-from pipeline_lyrae_talk import function_1  # Import your existing function
+from function_1 import pipeline_lyrae_talk  # Import your existing function
 
 app = func.FunctionApp()
 
