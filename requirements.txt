@@ -1,6 +1,6 @@
 dateparser
 transformers
-faiss_gpu
+faiss_cpu
 langchain_community
 langchain
 tiktoken
