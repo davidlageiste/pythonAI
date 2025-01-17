@@ -1,13 +1,7 @@
 import logging
 import azure.functions as func
 from ..function_1 import pipeline_lyrae_talk
-from azure.communication.calling import (
-    CallClient,
-    CallAgent,
-    IncomingCall,
-    VideoStreamRenderer,
-    LocalVideoStream
-)
+from azure.communication.callautomation import CallAutomationClient, CallInvite, IncomingCallContext
 from azure.communication.identity import CommunicationIdentityClient
 
 def main(event: func.EventGridEvent):
@@ -60,43 +54,42 @@ def handle_incoming_call(req: func.HttpRequest) -> func.HttpResponse:
 class AzureCallHandler:
     def __init__(self, connection_string):
         self.connection_string = connection_string
-        self.call_agent = None
-        self.call_client = None
+        self.call_automation_client = None
         self.current_call = None
 
     def initialize(self):
-        # Create the identity client to get a token
-        identity_client = CommunicationIdentityClient.from_connection_string(self.connection_string)
-        user = identity_client.create_user()
-        token_response = identity_client.get_token(user, ["voip"])
-
-        # Initialize call client and agent
-        self.call_client = CallClient()
-        self.call_agent = self.call_client.create_call_agent(token_response.token)
+        try:
+            # Initialize the CallAutomationClient
+            self.call_automation_client = CallAutomationClient.from_connection_string(self.connection_string)
+            logging.info("CallAutomationClient initialized successfully.")
+        except Exception as e:
+            logging.error(f"Error initializing CallAutomationClient: {str(e)}")
+            raise
 
     def accept_call(self, incoming_call_context):
         try:
-            # Initialize if not already initialized
-            if not self.call_agent:
+            # Ensure the client is initialized
+            if not self.call_automation_client:
                 self.initialize()
 
-            # Create an IncomingCall object from the context
-            incoming_call = IncomingCall(
-                caller_id=incoming_call_context.get('callerId'),
-                correlation_id=incoming_call_context.get('correlationId')
+            # Create an IncomingCallContext object
+            call_context = IncomingCallContext.from_dict(incoming_call_context)
+
+            # Accept the incoming call
+            self.current_call = self.call_automation_client.answer_call(
+                incoming_call_context=call_context,
+                callback_url="<YOUR_CALLBACK_URL>"
             )
 
-            # Accept the call
-            self.current_call = incoming_call.accept()
-            logging.info(f"Call accepted from {incoming_call_context.get('callerId')}")
+            logging.info(f"Call accepted from {call_context.caller_id}")
 
-            # Call the pipeline function
+            # Call the pipeline function with the call connection
             pipeline_lyrae_talk(self.current_call)
 
             return {
                 'status': 'accepted',
-                'callId': str(self.current_call.id),
-                'caller': incoming_call_context.get('callerId')
+                'callId': str(self.current_call.call_connection_id),
+                'caller': call_context.caller_id
             }
 
         except Exception as e:
