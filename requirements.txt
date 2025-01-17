@@ -10,7 +10,5 @@ azure-functions
 azure-eventgrid
 openai==1.56.1
 httpx==0.27.2
---legacy-resolver
---extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
 azure-communication-callautomation
 azure-communication-identity
