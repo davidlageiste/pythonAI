@@ -1,5 +1,4 @@
 dateparser
-transformers
 faiss_cpu
 langchain_community
 langchain
