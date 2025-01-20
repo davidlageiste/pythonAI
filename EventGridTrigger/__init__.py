@@ -21,6 +21,7 @@ def main(event: func.EventGridEvent):
     except Exception as e:
         logging.error(f'Error executing pipeline: {str(e)}')
 
+
 def handle_incoming_call(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing incoming call request')
 
