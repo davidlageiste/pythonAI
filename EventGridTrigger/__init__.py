@@ -1,6 +1,6 @@
 import logging
 import azure.functions as func
-from ..function_1 import pipeline_lyrae_talk
+from function_1 import pipeline_lyrae_talk
 from azure.communication.callautomation import CallAutomationClient, CallInvite, IncomingCallContext
 from azure.communication.identity import CommunicationIdentityClient
 
