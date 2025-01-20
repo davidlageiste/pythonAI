@@ -66,9 +66,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_4A5CF16F8D054B5DB244BD4FB1191C50 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A0B4E99900C240A88B25654F301AD9DC }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8B43ACB0967A4D7A892863D70765E567 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E8BEE258D2214965B5C3907439C7D88C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_975773CF883B46DBBD8D7B15A7551DCC }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_333D944325514B869328C1A59D74476B }}
 
       - name: 'Deploy to Azure Functions'
         uses: Azure/functions-action@v1
@@ -77,5 +77,4 @@ jobs:
           app-name: 'moduleInformatifPython'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          remote-build: true
-          scm-do-build-during-deployment: true
+          
