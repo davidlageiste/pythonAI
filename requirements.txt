@@ -6,6 +6,7 @@ langchain
 tiktoken
 unicode
 python-docx
+sentence_transformers
 azure-functions
 azure-eventgrid
 openai==1.56.1
