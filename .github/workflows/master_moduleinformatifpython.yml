@@ -77,6 +77,6 @@ jobs:
           app-name: 'moduleInformatifPython'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          remote_build: true
+          remote-build: true
           scm-do-build-during-deployment: true
           
