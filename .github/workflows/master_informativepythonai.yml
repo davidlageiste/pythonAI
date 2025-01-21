@@ -34,7 +34,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
+          pip install --verbose transformers
+          pip install --verbose -r requirements.txt 2>&1 | tee pip_install.log
           
       # This is the important part - we need to copy the installed packages
       - name: Copy dependencies to .python_packages
