@@ -1,5 +1,6 @@
-numpy>=1.21.0
-transformers==4.48.0
+numpy==1.26.4
+transformers
+torch --index-url https://download.pytorch.org/whl/cpu
 dateparser
 faiss_cpu
 langchain_community
