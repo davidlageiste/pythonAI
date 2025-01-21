@@ -6,9 +6,6 @@ import requests
 import json
 import faiss
 import os
-if not hasattr(os, 'add_dll_directory'):
-    os.add_dll_directory = lambda x: None
-
 import unicodedata
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
