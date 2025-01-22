@@ -14,3 +14,6 @@ openai==1.56.1
 httpx==0.27.2
 azure-communication-callautomation
 azure-communication-identity
+-f https://download.pytorch.org/whl/torch_stable.html
+torch==1.13.0+cpu
+torchvision==0.14.0+cpu
