@@ -1,19 +1,7 @@
-# numpy==1.21.6 --no-binary=numpy
-transformers
-dateparser
-faiss_cpu
-langchain_community
-langchain
-tiktoken
-unicode
-python-docx
-sentence_transformers
 azure-functions
-azure-eventgrid
-openai==1.56.1
-httpx==0.27.2
-azure-communication-callautomation
-azure-communication-identity
--f https://download.pytorch.org/whl/torch_stable.html
-torch==1.13.0+cpu
-torchvision==0.14.0+cpu
+azure-storage-blob
+langchain
+langchain-community
+openai
+python-docx
+faiss-cpu
