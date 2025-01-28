@@ -166,6 +166,7 @@ class RAG_Azure:
         context = "\n".join([doc.page_content for doc in retrieved_docs])
         return self.assistant.answer_query(query, context)
 
+
 # Azure Function
 app = func.FunctionApp()
 
