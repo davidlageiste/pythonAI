@@ -59,42 +59,6 @@ class VirtualAssistant:
         return completion.choices[0].message.content
 
 class RAG_Azure:
-    def __init__(self, llm_model="gpt-3.5-turbo"):
-        # Try to load from Azure Blob Storage
-        blob_service = BlobServiceClient.from_connection_string(
-            os.environ["AzureWebJobsStorage"]
-        )
-        container_client = blob_service.get_container_client("faiss-indexes")
-        
-        try:
-            # Download FAISS index from blob storage
-            blob_client = container_client.get_blob_client("index.faiss")
-            with open("/tmp/index.faiss", "wb") as f:
-                f.write(blob_client.download_blob().readall())
-            
-            blob_client = container_client.get_blob_client("index.pkl")
-            with open("/tmp/index.pkl", "wb") as f:
-                f.write(blob_client.download_blob().readall())
-            
-            self.knowledge_base = KnowledgeBase('')
-            self.knowledge_base.retriever = FAISS.load_local(
-                "/tmp", 
-                self.knowledge_base.embeddings
-            ).as_retriever()
-            
-        except Exception as e:
-            logging.info(f"No existing index found, creating new one: {str(e)}")
-            # Load documents from blob storage
-            documents = self.load_documents_from_blob()
-            self.knowledge_base = KnowledgeBase(documents)
-            self.knowledge_base.build_retriever()
-
-        self.assistant = VirtualAssistant(
-            retriever=self.knowledge_base.retriever,
-            general=True,
-            llm_model=llm_model
-        )
-
     @staticmethod
     def load_documents_from_blob():
         blob_service = BlobServiceClient.from_connection_string(
