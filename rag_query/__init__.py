@@ -167,12 +167,7 @@ class RAG_Azure:
         return self.assistant.answer_query(query, context)
 
 
-# Azure Function
-app = func.FunctionApp()
-
-@app.route(route="rag_query")
-@app.function_name(name="rag_query")
-def rag_query(req: func.HttpRequest) -> func.HttpResponse:
+def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     try:
