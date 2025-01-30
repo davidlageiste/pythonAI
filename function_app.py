@@ -170,6 +170,7 @@ class RAG_Azure:
 # Azure Function
 app = func.FunctionApp()
 
+@app.function_name(name="rag_query")
 @app.route(route="rag_query")
 def rag_query(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
