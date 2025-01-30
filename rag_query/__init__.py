@@ -10,7 +10,7 @@ from docx import Document as DocxDocument
 import os
 import json
 from azure.storage.blob import BlobServiceClient
-from function_1 import RAG_Azure
+from .function_1 import RAG_Azure
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
