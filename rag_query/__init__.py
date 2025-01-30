@@ -1,5 +1,3 @@
-# function_app.py
-
 import azure.functions as func
 import logging
 from langchain.document_loaders import PyPDFLoader, DirectoryLoader, TextLoader, JSONLoader

@@ -7,9 +7,9 @@
         "direction": "in",
         "name": "req",
         "methods": [
-          "get",
           "post"
-        ]
+        ],
+        "route": "rag_query"
       },
       {
         "type": "http",
@@ -17,4 +17,4 @@
         "name": "$return"
       }
     ]
-}
+  }
