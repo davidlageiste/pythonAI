@@ -13,47 +13,22 @@ from azure.storage.blob import BlobServiceClient
 
 class KnowledgeBase:
     def __init__(self, text_data):
-        texts = self.text_split(text_data)
+        texts=self.text_split(text_data)
         self.documents = self.convert_texts_to_documents(texts)
-        self.embeddings = OpenAIEmbeddings(
-            model="text-embedding-ada-002",
-            api_key=os.environ["OPENAI_API_KEY"]
-        )
+        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",api_key= os.environ["OPENAI_API_KEY"])
         self.retriever = None
 
     @staticmethod
     def text_split(extracted_data):
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=200, 
-            chunk_overlap=50,
-            separators=["\n"]
-        )
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size =200, chunk_overlap =50,separators=["\n"])
         text_chunks = text_splitter.split_text(extracted_data)
         return text_chunks
 
-    def build_retriever(self):
+    def build_retriever(self,save=True):
         store = FAISS.from_documents(self.documents, self.embeddings)
-        # Save to Azure Blob Storage instead of local filesystem
-        blob_service = BlobServiceClient.from_connection_string(
-            os.environ["AzureWebJobsStorage"]
-        )
-        container_client = blob_service.get_container_client("faiss-indexes")
-        
-        # Ensure container exists
-        if not container_client.exists():
-            container_client.create_container()
-        
-        # Save FAISS index to temporary file then upload
-        store.save_local("temp_faiss_index")
-        with open("temp_faiss_index/index.faiss", "rb") as data:
-            blob_client = container_client.get_blob_client("index.faiss")
-            blob_client.upload_blob(data, overwrite=True)
-        
-        with open("temp_faiss_index/index.pkl", "rb") as data:
-            blob_client = container_client.get_blob_client("index.pkl")
-            blob_client.upload_blob(data, overwrite=True)
-        
-        self.retriever = store.as_retriever()
+        if save:
+            store.save_local("faiss_index")
+        self.retriever =store.as_retriever()
 
     @staticmethod
     def convert_texts_to_documents(texts):
