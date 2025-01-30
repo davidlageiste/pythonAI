@@ -69,45 +69,34 @@ class RAG_Azure:
             self.knowledge_base.build_retriever()
 
         self.assistant = VirtualAssistant(retriever=self.knowledge_base.retriever,general=True,llm_model=llm_model)
-        
+
     @staticmethod
-    def load_documents_from_blob():
-        blob_service = BlobServiceClient.from_connection_string(
-            os.environ["AzureWebJobsStorage"]
-        )
-        container_client = blob_service.get_container_client("documents")
-        
+    def load_files_contents(data_path):
         concatenated_content = ""
-        
-        # List all blobs in the container
-        blobs = container_client.list_blobs()
-        for blob in blobs:
-            blob_client = container_client.get_blob_client(blob.name)
-            content = blob_client.download_blob().readall()
-            
-            if blob.name.endswith('.pdf'):
-                # Save temporarily and load with PyPDFLoader
-                with open("/tmp/temp.pdf", "wb") as f:
-                    f.write(content)
-                loader = PyPDFLoader("/tmp/temp.pdf")
+        for filename in os.listdir(data_path):
+            filepath = os.path.join(data_path, filename)
+            if filename.endswith(".pdf"):
+                loader = PyPDFLoader(filepath)
                 documents = loader.load()
-                concatenated_content += "\n".join([doc.page_content for doc in documents])
-            
-            elif blob.name.endswith('.txt'):
-                concatenated_content += content.decode('utf-8')
-            
-            elif blob.name.endswith('.json'):
-                data = json.loads(content)
-                concatenated_content += json.dumps(data, indent=2)
-            
-            elif blob.name.endswith('.docx'):
-                # Save temporarily and load with DocxDocument
-                with open("/tmp/temp.docx", "wb") as f:
-                    f.write(content)
-                doc = DocxDocument("/tmp/temp.docx")
-                concatenated_content += "\n".join([p.text for p in doc.paragraphs])
-        
+                concatenated_content += "\n".join([doc.page_content for doc in documents]) + "\n"
+            elif filename.endswith(".txt"):
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    concatenated_content += file.read() + "\n"
+            elif filename.endswith(".json"):
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    data = json.load(file)
+                    concatenated_content += json.dumps(data, indent=2) + "\n"
+            elif filename.endswith(".docx"):
+                doc = DocxDocument(filepath)
+                concatenated_content += "\n".join([paragraph.text for paragraph in doc.paragraphs]) + "\n"
         return concatenated_content
+
+
+    def answer_query(self, query):
+        relevant_docs = self.knowledge_base.retriever.get_relevant_documents(query)
+        context = "\n".join([doc.page_content for doc in relevant_docs])
+        response_message = self.assistant.answer_query(query, context)
+        return response_message
 
     def process_query(self, query):
         retrieved_docs = self.knowledge_base.retriever.get_relevant_documents(query)
