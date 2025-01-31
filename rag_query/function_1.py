@@ -4,6 +4,7 @@ from langchain.document_loaders import PyPDFLoader, DirectoryLoader, TextLoader,
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+import faiss
 from langchain.schema import Document
 from openai import OpenAI
 from docx import Document as DocxDocument
@@ -64,13 +65,19 @@ class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
         if os.path.exists("faiss_index"):
             self.knowledge_base = KnowledgeBase('')
-            self.knowledge_base.retriever = FAISS.load_local("faiss_index", self.knowledge_base.embeddings).as_retriever()
+            self.knowledge_base.retriever = self.load_local_cpu_index("faiss_index", self.knowledge_base.embeddings).as_retriever()
         else:
             documents = self.load_files_contents('data')
             self.knowledge_base = KnowledgeBase(documents)
             self.knowledge_base.build_retriever()
 
         self.assistant = VirtualAssistant(retriever=self.knowledge_base.retriever,general=True,llm_model=llm_model)
+
+    @staticmethod
+    def load_local_cpu_index(folder_path, embeddings):
+        index = faiss.read_index(os.path.join(folder_path, "index.faiss"))
+        faiss.normalize_L2(index)
+        return FAISS.load_local(folder_path, embeddings, index=index)
 
     @staticmethod
     def load_files_contents(data_path):
