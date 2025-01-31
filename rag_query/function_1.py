@@ -109,5 +109,8 @@ class RAG_Azure:
 
     def process_query(self, query):
         retrieved_docs = self.knowledge_base.retriever.get_relevant_documents(query)
+        print(f"Retrieved documents: {retrieved_docs}")
+        if not retrieved_docs:
+            return "Aucun document pertinent trouvé."
         context = "\n".join([doc.page_content for doc in retrieved_docs])
         return self.assistant.answer_query(query, context)
