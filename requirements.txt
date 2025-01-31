@@ -5,3 +5,4 @@ langchain-community
 openai
 python-docx
 faiss-cpu
+tiktoken
