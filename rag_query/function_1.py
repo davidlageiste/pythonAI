@@ -62,7 +62,7 @@ class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
         if os.path.exists("faiss_index"):
             self.knowledge_base = KnowledgeBase('')
-            self.knowledge_base.retriever = FAISS.load_local("faiss_index", self.knowledge_base.embeddings, allow_dangerous_deserialization=True).as_retriever()
+            self.knowledge_base.retriever = FAISS.load_local("faiss_index", self.knowledge_base.embeddings).as_retriever()
         else:
             documents = self.load_files_contents('data')
             self.knowledge_base = KnowledgeBase(documents)
