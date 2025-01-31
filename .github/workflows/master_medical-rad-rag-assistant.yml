@@ -80,4 +80,3 @@ jobs:
           app-name: 'medical-rad-rag-assistant'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          
