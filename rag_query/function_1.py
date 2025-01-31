@@ -12,7 +12,6 @@ import json
 from azure.storage.blob import BlobServiceClient
 
 os.environ['FAISS_NO_GPU'] = '1'
-FAISS.set_use_gpu(False)
 
 class KnowledgeBase:
     def __init__(self, text_data):
