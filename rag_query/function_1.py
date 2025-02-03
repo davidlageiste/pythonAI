@@ -10,6 +10,8 @@ from openai import OpenAI
 from docx import Document as DocxDocument
 import os
 import json
+import tempfile
+import pickle
 from azure.storage.blob import BlobServiceClient
 
 os.environ['FAISS_NO_GPU'] = '1'
@@ -27,11 +29,34 @@ class KnowledgeBase:
         text_chunks = text_splitter.split_text(extracted_data)
         return text_chunks
 
-    def build_retriever(self,save=True):
+    def build_retriever(self, connection_string, container_name):
         store = FAISS.from_documents(self.documents, self.embeddings)
-        if save:
-            store.save_local("faiss_index")
-        self.retriever =store.as_retriever()
+        self._save_to_blob(store, connection_string, container_name)
+        self.retriever = store.as_retriever()
+        # if save:
+        #     store.save_local("faiss_index")
+        # self.retriever =store.as_retriever()
+
+    @staticmethod
+    def _save_to_blob(store, connection_string, container_name):
+        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        container_client = blob_service_client.get_container_client(container_name)
+
+        # Save the index to a temporary file first
+        with tempfile.NamedTemporaryFile(delete=False) as temp_index:
+            faiss.write_index(store.index, temp_index.name)
+            # Upload to blob storage
+            with open(temp_index.name, 'rb') as data:
+                container_client.upload_blob(name="index.faiss", data=data, overwrite=True)
+        os.unlink(temp_index.name)
+
+        # Save the docstore
+        with tempfile.NamedTemporaryFile(delete=False) as temp_docstore:
+            pickle.dump(store.docstore, temp_docstore)
+            temp_docstore.flush()
+            with open(temp_docstore.name, 'rb') as data:
+                container_client.upload_blob(name="docstore.pkl", data=data, overwrite=True)
+        os.unlink(temp_docstore.name)
 
     @staticmethod
     def convert_texts_to_documents(texts):
@@ -63,16 +88,65 @@ class VirtualAssistant:
 
 class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
-        if os.path.exists("faiss_index"):
+        self.connection_string = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
+        try:
+            # Try to load from blob storage
             self.knowledge_base = KnowledgeBase('')
-            self.knowledge_base.retriever = self.load_local_cpu_index("faiss_index", self.knowledge_base.embeddings).as_retriever()
-        else:
+            self.knowledge_base.retriever = self._load_from_blob().as_retriever()
+        except Exception as e:
+            logging.info(f"Could not load from blob storage: {str(e)}. Building new index.")
             documents = self.load_files_contents('data')
             self.knowledge_base = KnowledgeBase(documents)
-            self.knowledge_base.build_retriever()
+            self.knowledge_base.build_retriever(self.connection_string, self.container_name)
 
-        self.assistant = VirtualAssistant(retriever=self.knowledge_base.retriever,general=True,llm_model=llm_model)
+        self.assistant = VirtualAssistant(
+            retriever=self.knowledge_base.retriever,
+            general=True,
+            llm_model=llm_model
+        )
+        # if os.path.exists("faiss_index"):
+        #     self.knowledge_base = KnowledgeBase('')
+        #     self.knowledge_base.retriever = self.load_local_cpu_index("faiss_index", self.knowledge_base.embeddings).as_retriever()
+        # else:
+        #     documents = self.load_files_contents('data')
+        #     self.knowledge_base = KnowledgeBase(documents)
+        #     self.knowledge_base.build_retriever()
 
+        # self.assistant = VirtualAssistant(retriever=self.knowledge_base.retriever,general=True,llm_model=llm_model)
+
+    def _load_from_blob(self):
+        blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+        container_client = blob_service_client.get_container_client(self.container_name)
+
+        # Download index
+        with tempfile.NamedTemporaryFile(delete=False) as temp_index:
+            index_blob_client = container_client.get_blob_client("index.faiss")
+            index_data = index_blob_client.download_blob()
+            temp_index.write(index_data.readall())
+            temp_index.flush()
+            
+            # Download docstore
+            docstore_blob_client = container_client.get_blob_client("docstore.pkl")
+            docstore_data = docstore_blob_client.download_blob()
+            
+            with tempfile.NamedTemporaryFile(delete=False) as temp_docstore:
+                temp_docstore.write(docstore_data.readall())
+                temp_docstore.flush()
+                
+                # Load both files
+                index = faiss.read_index(temp_index.name)
+                with open(temp_docstore.name, 'rb') as f:
+                    docstore = pickle.load(f)
+
+        # Cleanup temporary files
+        os.unlink(temp_index.name)
+        os.unlink(temp_docstore.name)
+
+        # Create FAISS instance
+        faiss_instance = FAISS(self.knowledge_base.embeddings.embed_query, index, docstore)
+        return faiss_instance
+    
     @staticmethod
     def load_local_cpu_index(folder_path, embeddings):
         index = faiss.read_index(os.path.join(folder_path, "index.faiss"))
