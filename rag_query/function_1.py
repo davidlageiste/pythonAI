@@ -91,8 +91,6 @@ class RAG_Azure:
             llm_model=llm_model
         )
 
-
-
     def _load_from_blob(self):
         try:
             logger.info("Démarrage du chargement depuis Azure Blob Storage.")
@@ -148,7 +146,7 @@ class RAG_Azure:
             raise RuntimeError(f"Erreur lors du chargement des blobs : {e}")
 
     
-  def load_files_contents(data_path):
+    def load_files_contents(data_path):
             content_parts = []  
             file_handlers = {
                 ".pdf": lambda path: "\n".join(doc.page_content for doc in PyPDFLoader(path).load()),
@@ -165,7 +163,6 @@ class RAG_Azure:
                     except Exception as e:
                         logging.error(f"Error loading {filepath}: {e}")
             return "\n".join(content_parts)  
-
 
     def process_query(self, query):
         retrieved_docs = self.knowledge_base.retriever.get_relevant_documents(query , k=4)
