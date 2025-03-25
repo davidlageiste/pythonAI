@@ -9,6 +9,7 @@ from langchain.schema import Document
 from openai import OpenAI
 from docx import Document as DocxDocument
 import os
+import io
 import json
 import tempfile
 import pickle
@@ -86,9 +87,9 @@ class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
         self.connection_string = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
-        self.knowledge_base = KnowledgeBase('')
-        logger.info(f"knowledge base from empty string is well done")
         try:
+            self.knowledge_base = KnowledgeBase('')
+            logger.info(f"knowledge base from empty string is well done")
             self.knowledge_base.retriever = self._load_from_blob().as_retriever()
             logger.info(f"load from blob storage is done. No Building new index.")
         except Exception as e:
