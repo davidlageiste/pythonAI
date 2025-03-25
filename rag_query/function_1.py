@@ -143,7 +143,7 @@ class RAG_Azure:
             os.unlink(temp_docstore.name)
     
             logger.info("Chargement terminé avec succès.")
-            return FAISS(self.knowledge_base.embeddings.embed_query, index, docstore)
+            return FAISS(embedding_function=self.knowledge_base.embeddings.embed_query, index=index, docstore=docstore ,index_to_docstore_id = {})
     
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des blobs : {e}")
