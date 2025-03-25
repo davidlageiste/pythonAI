@@ -146,7 +146,7 @@ class RAG_Azure:
             raise RuntimeError(f"Erreur lors du chargement des blobs : {e}")
 
     
-    def load_files_contents(data_path):
+    def load_files_contents(self , data_path):
             content_parts = []  
             file_handlers = {
                 ".pdf": lambda path: "\n".join(doc.page_content for doc in PyPDFLoader(path).load()),
