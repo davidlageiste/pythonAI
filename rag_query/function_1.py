@@ -131,19 +131,20 @@ class RAG_Azure:
             # Chargement de l'index FAISS
             logger.info("Chargement de l'index FAISS depuis le fichier temporaire.")
             index = faiss.read_index(temp_index.name)
-    
+            
             # Chargement du docstore
             logger.info("Chargement du docstore depuis le fichier temporaire.")
             with open(temp_docstore.name, 'rb') as f:
                 docstore = pickle.load(f)
-    
+            logger.info(f"index content is {index}")
+            logger.info(f"index content is {docsore.index_to_docstore_id}")
             # Nettoyage des fichiers temporaires
             logger.info("Suppression des fichiers temporaires.")
             os.unlink(temp_index.name)
             os.unlink(temp_docstore.name)
     
             logger.info("Chargement terminé avec succès.")
-            return FAISS(self.knowledge_base.embeddings.embed_query, index,docstore ,{})
+            return FAISS(self.knowledge_base.embeddings.embed_query, index,docstore ,docsore.index_to_docstore_id)
     
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des blobs : {e}")
