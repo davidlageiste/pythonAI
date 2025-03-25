@@ -51,6 +51,12 @@ class KnowledgeBase:
             with open(temp_docstore.name, 'rb') as data:
                 container_client.upload_blob(name="docstore.pkl", data=data, overwrite=True)
             os.unlink(temp_docstore.name)
+        with tempfile.NamedTemporaryFile(delete=False) as temp_mapping:
+            pickle.dump(store.index_to_docstore_id, temp_mapping)
+            temp_mapping.flush()
+            with open(temp_mapping.name, 'rb') as data:
+                container_client.upload_blob(name="index_to_docstore_id.pkl", data=data, overwrite=True)
+            os.unlink(temp_mapping.name)
 
 
 
@@ -105,9 +111,10 @@ class RAG_Azure:
             container_client = blob_service_client.get_container_client(self.container_name)
     
             # Récupération des blobs
-            logger.info("Récupération des blobs 'index.faiss' et 'docstore.pkl'.")
+            logger.info("Récupération des blobs 'index.faiss' et 'docstore.pkl'. et index_to_docstore_id.pkl")
             index_blob_client = container_client.get_blob_client("index.faiss")
             docstore_blob_client = container_client.get_blob_client("docstore.pkl")
+            docstore_id_blob_client = container_client.get_blob_client("index_to_docstore_id.pkl")
     
             # Vérification de l'existence des blobs
             if not index_blob_client.exists():
@@ -127,6 +134,11 @@ class RAG_Azure:
                 logger.info("Téléchargement et écriture du fichier temporaire pour 'docstore.pkl'.")
                 temp_docstore.write(docstore_blob_client.download_blob().readall())
                 temp_docstore.close()
+                
+            with tempfile.NamedTemporaryFile(delete=False) as temp_docstore_id:
+                logger.info("Téléchargement et écriture du fichier temporaire pour 'index_to_docstore_id.pkl'.")
+                temp_docstore_id.write(docstore_id_blob_client.download_blob().readall())
+                temp_docstore_id.close()
     
             # Chargement de l'index FAISS
             logger.info("Chargement de l'index FAISS depuis le fichier temporaire.")
@@ -136,15 +148,20 @@ class RAG_Azure:
             logger.info("Chargement du docstore depuis le fichier temporaire.")
             with open(temp_docstore.name, 'rb') as f:
                 docstore = pickle.load(f)
+                
+            with open(temp_docstore_id.name, 'rb') as f1:
+                docstore_id = pickle.load(f1)
+                
             logger.info(f"index content is {index}")
-            logger.info(f"index content is {docstore.index_to_docstore_id}")
+            logger.info(f"docstore_id content is {docstore_id}")
             # Nettoyage des fichiers temporaires
             logger.info("Suppression des fichiers temporaires.")
             os.unlink(temp_index.name)
             os.unlink(temp_docstore.name)
+            os.unlink(temp_docstore_id.name)
     
             logger.info("Chargement terminé avec succès.")
-            return FAISS(self.knowledge_base.embeddings.embed_query, index,docstore ,docstore.index_to_docstore_id)
+            return FAISS(self.knowledge_base.embeddings.embed_query, index,docstore ,docstore_id)
     
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des blobs : {e}")
