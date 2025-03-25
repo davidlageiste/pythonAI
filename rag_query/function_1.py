@@ -23,10 +23,10 @@ class KnowledgeBase:
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
         self.retriever = None
         
-    def convert_texts_to_documents(texts):
+    def convert_texts_to_documents(self, texts):
         return [Document(page_content=text) for text in texts]
         
-    def text_split(extracted_data):
+    def text_split(self , extracted_data):
         return self.text_splitter.split_text(extracted_data)
 
     def build_retriever(self, connection_string, container_name):
@@ -34,7 +34,7 @@ class KnowledgeBase:
         self._save_to_blob(store, connection_string, container_name)
         self.retriever = store.as_retriever()
 
-    def _save_to_blob(store, connection_string, container_name):
+    def _save_to_blob(self , store, connection_string, container_name):
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(container_name)
         with tempfile.NamedTemporaryFile(delete=False) as temp_index:
