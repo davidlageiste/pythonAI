@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class KnowledgeBase:
     def __init__(self, text_data):
         self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",api_key= os.environ["OPENAI_API_KEY"])
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size =200, chunk_overlap =50,separators=["\n"])
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size =200, chunk_overlap =50,separators=["\n\n","\n"])
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
         self.retriever = None
         
@@ -60,33 +60,19 @@ class KnowledgeBase:
             os.unlink(temp_mapping.name)
 
 
-
-class VirtualAssistant:
-    def __init__(self, retriever, llm_model="gpt-3.5-turbo"):
-        self.retriever = retriever
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-    def answer_query(self, query, context):
-        custom_prompt_template = (
-            f"Vous êtes une assistante virtuelle spécialisée pour un cabinet de radiologie médicale.\n"
-            f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
-            f"Question du patient : {query}\n\n"
-            f"Répondez uniquement à la question posée, de manière claire et concise."
-        )
-
-        completion = self.client.chat.completions.create(
-            model='gpt-3.5-turbo',
-            messages=[
-                {"role": "system", "content": custom_prompt_template},
-                {"role": "user", "content": query}
-            ]
-        )
-        return completion.choices[0].message.content
-
 class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
         self.connection_string = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
+        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.llm_model=llm_model
+        self.custom_prompt_template = (
+                    f"Vous êtes une assistante virtuelle spécialisée pour un cabinet de radiologie médicale.\n"
+                    f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
+                    f"Question du patient : {query}\n\n"
+                    f"Répondez uniquement à la question posée, de manière claire et concise."
+                )
+        
         try:
             self.knowledge_base = KnowledgeBase('')
             logger.info(f"knowledge base from empty string is well done")
@@ -96,49 +82,31 @@ class RAG_Azure:
             logger.info(f"Could not load from blob storage: {str(e)}. Building new index.")
             self.knowledge_base = KnowledgeBase(self.load_files_contents('data'))
             self.knowledge_base.build_retriever(self.connection_string, self.container_name)
-
-        self.assistant = VirtualAssistant(
-            retriever=self.knowledge_base.retriever,
-            llm_model=llm_model
-        )
         
     def _load_from_blob(self):
             try:
                 logger.info("Démarrage du chargement depuis Azure Blob Storage.")
-        
-                # Connexion au Blob Storage
                 logger.info("Connexion à Azure Blob Storage.")
                 blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
                 container_client = blob_service_client.get_container_client(self.container_name)
-        
-                # Récupération des blobs
                 logger.info("Récupération des blobs 'index.faiss' et 'docstore.pkl'. et index_to_docstore_id.pkl")
                 index_blob_client = container_client.get_blob_client("index.faiss")
                 docstore_blob_client = container_client.get_blob_client("docstore.pkl")
                 docstore_id_blob_client = container_client.get_blob_client("index_to_docstore_id.pkl")
-        
-                # Vérification de l'existence des blobs
                 if not index_blob_client.exists() or not docstore_blob_client.exists() or not docstore_id_blob_client.exists():
                     raise FileNotFoundError("Les blobs nécessaires sont introuvables.")
-        
-                # Téléchargement des blobs en mémoire
                 index_data = index_blob_client.download_blob().readall()
                 docstore_data = docstore_blob_client.download_blob().readall()
                 docstore_id_data = docstore_id_blob_client.download_blob().readall()
-        
-                # Chargement de l'index FAISS depuis les données en mémoire
                 logger.info("Chargement de l'index FAISS depuis la mémoire.")
                 with tempfile.NamedTemporaryFile(delete=False) as tmp_index:
                         tmp_index.write(index_data)
                         tmp_index_path = tmp_index.name
                 index = faiss.read_index(tmp_index_path)
                 os.unlink(tmp_index_path)  # Nettoyage immédiat
-        
-                # Chargement du docstore depuis la mémoire
                 logger.info("Chargement du docstore depuis la mémoire.")
                 docstore = pickle.loads(docstore_data)
                 docstore_id = pickle.loads(docstore_id_data)
-        
                 logger.info("Chargement terminé avec succès.")
                 return FAISS(self.knowledge_base.embeddings, index, docstore, docstore_id)
             except Exception as e:
@@ -161,11 +129,26 @@ class RAG_Azure:
                         content_parts.append(file_handlers[file_ext](filepath))
                     except Exception as e:
                         logger.error(f"Error loading {filepath}: {e}")
-            return "\n".join(content_parts)  
+            return "\n".join(content_parts)
+        
+    def answer_query(self, query, context):
+        try:
+                completion = self.client.chat.completions.create(
+                    model='gpt-3.5-turbo',
+                    messages=[
+                        {"role": "system", "content": self.custom_prompt_template},
+                        {"role": "user", "content": query}
+                    ],
+                )
+                return completion.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error answering query: {e}")
+            return "Une erreur est survenue lors de la réponse."
+            
 
     def process_query(self, query):
-        retrieved_docs = self.knowledge_base.retriever.get_relevant_documents(query , k=4)
+        retrieved_docs = self.knowledge_base.retriever.get_relevant_documents(query , k=3)
         if not retrieved_docs:
             return "Aucun document pertinent trouvé."
         context ="\n".join(doc.page_content for doc in retrieved_docs) 
-        return self.assistant.answer_query(query, context)
+        return self.answer_query(query, context)
