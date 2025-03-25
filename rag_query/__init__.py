@@ -1,15 +1,7 @@
 import azure.functions as func
 import logging
-from langchain.document_loaders import PyPDFLoader, DirectoryLoader, TextLoader, JSONLoader
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
-from openai import OpenAI
-from docx import Document as DocxDocument
 import os
 import json
-from azure.storage.blob import BlobServiceClient
 from .function_1 import RAG_Azure
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
