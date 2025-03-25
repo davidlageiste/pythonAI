@@ -100,77 +100,46 @@ class RAG_Azure:
             retriever=self.knowledge_base.retriever,
             llm_model=llm_model
         )
-
+        
     def _load_from_blob(self):
-        try:
-            logger.info("Démarrage du chargement depuis Azure Blob Storage.")
-    
-            # Connexion au Blob Storage
-            logger.info("Connexion à Azure Blob Storage.")
-            blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-            container_client = blob_service_client.get_container_client(self.container_name)
-    
-            # Récupération des blobs
-            logger.info("Récupération des blobs 'index.faiss' et 'docstore.pkl'. et index_to_docstore_id.pkl")
-            index_blob_client = container_client.get_blob_client("index.faiss")
-            docstore_blob_client = container_client.get_blob_client("docstore.pkl")
-            docstore_id_blob_client = container_client.get_blob_client("index_to_docstore_id.pkl")
-    
-            # Vérification de l'existence des blobs
-            if not index_blob_client.exists():
-                logger.error("Le blob 'index.faiss' est introuvable.")
-                raise FileNotFoundError("Le blob 'index.faiss' est introuvable.")
-            if not docstore_blob_client.exists():
-                logger.error("Le blob 'docstore.pkl' est introuvable.")
-                raise FileNotFoundError("Le blob 'docstore.pkl' est introuvable.")
-            if not docstore_id_blob_client.exists():
-                logger.error("Le blob 'index_to_docstore_id.pkl' est introuvable.")
-                raise FileNotFoundError("Le blob 'index_to_docstore_id.pkl' est introuvable.")
-    
-            # Téléchargement et écriture des fichiers temporaires
-            with tempfile.NamedTemporaryFile(delete=False) as temp_index:
-                logger.info("Téléchargement et écriture du fichier temporaire pour 'index.faiss'.")
-                temp_index.write(index_blob_client.download_blob().readall())
-                temp_index.close()
-    
-            with tempfile.NamedTemporaryFile(delete=False) as temp_docstore:
-                logger.info("Téléchargement et écriture du fichier temporaire pour 'docstore.pkl'.")
-                temp_docstore.write(docstore_blob_client.download_blob().readall())
-                temp_docstore.close()
-                
-            with tempfile.NamedTemporaryFile(delete=False) as temp_docstore_id:
-                logger.info("Téléchargement et écriture du fichier temporaire pour 'index_to_docstore_id.pkl'.")
-                temp_docstore_id.write(docstore_id_blob_client.download_blob().readall())
-                temp_docstore_id.close()
-    
-            # Chargement de l'index FAISS
-            logger.info("Chargement de l'index FAISS depuis le fichier temporaire.")
-            index = faiss.read_index(temp_index.name)
-            
-            # Chargement du docstore
-            logger.info("Chargement du docstore depuis le fichier temporaire.")
-            with open(temp_docstore.name, 'rb') as f:
-                docstore = pickle.load(f)
-                
-            with open(temp_docstore_id.name, 'rb') as f1:
-                docstore_id = pickle.load(f1)
-                
-            logger.info(f"index content is {index}")
-            logger.info(f"docstore_id content is {docstore_id}")
-            # Nettoyage des fichiers temporaires
-            logger.info("Suppression des fichiers temporaires.")
-            os.unlink(temp_index.name)
-            os.unlink(temp_docstore.name)
-            os.unlink(temp_docstore_id.name)
-    
-            logger.info("Chargement terminé avec succès.")
-            return FAISS(self.knowledge_base.embeddings, index,docstore ,docstore_id)
-    
-        except Exception as e:
-            logger.exception(f"Erreur lors du chargement des blobs : {e}")
-            raise RuntimeError(f"Erreur lors du chargement des blobs : {e}")
-
-    
+            try:
+                logger.info("Démarrage du chargement depuis Azure Blob Storage.")
+        
+                # Connexion au Blob Storage
+                logger.info("Connexion à Azure Blob Storage.")
+                blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
+                container_client = blob_service_client.get_container_client(self.container_name)
+        
+                # Récupération des blobs
+                logger.info("Récupération des blobs 'index.faiss' et 'docstore.pkl'. et index_to_docstore_id.pkl")
+                index_blob_client = container_client.get_blob_client("index.faiss")
+                docstore_blob_client = container_client.get_blob_client("docstore.pkl")
+                docstore_id_blob_client = container_client.get_blob_client("index_to_docstore_id.pkl")
+        
+                # Vérification de l'existence des blobs
+                if not index_blob_client.exists() or not docstore_blob_client.exists() or not docstore_id_blob_client.exists():
+                    raise FileNotFoundError("Les blobs nécessaires sont introuvables.")
+        
+                # Téléchargement des blobs en mémoire
+                index_data = index_blob_client.download_blob().readall()
+                docstore_data = docstore_blob_client.download_blob().readall()
+                docstore_id_data = docstore_id_blob_client.download_blob().readall()
+        
+                # Chargement de l'index FAISS depuis les données en mémoire
+                logger.info("Chargement de l'index FAISS depuis la mémoire.")
+                index = faiss.read_index(io.BytesIO(index_data))
+        
+                # Chargement du docstore depuis la mémoire
+                logger.info("Chargement du docstore depuis la mémoire.")
+                docstore = pickle.loads(docstore_data)
+                docstore_id = pickle.loads(docstore_id_data)
+        
+                logger.info("Chargement terminé avec succès.")
+                return FAISS(self.knowledge_base.embeddings, index, docstore, docstore_id)
+            except Exception as e:
+                logger.exception(f"Erreur lors du chargement des blobs : {e}")
+                raise RuntimeError(f"Erreur lors du chargement des blobs : {e}")
+        
     def load_files_contents(self , data_path):
             content_parts = []  
             file_handlers = {
