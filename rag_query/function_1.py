@@ -15,6 +15,9 @@ import pickle
 from azure.storage.blob import BlobServiceClient
 
 os.environ['FAISS_NO_GPU'] = '1'
+# Configuration du logger
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
     def __init__(self, text_data):
@@ -77,12 +80,13 @@ class RAG_Azure:
     def __init__(self , llm_model="gpt-3.5-turbo"):
         self.connection_string = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
+        self.knowledge_base = KnowledgeBase('')
+        logger.info(f"knowledge base from empty string is well done")
         try:
-            self.knowledge_base = KnowledgeBase('')
             self.knowledge_base.retriever = self._load_from_blob().as_retriever()
-            logging.info(f"Could  load from blob storage: {str(e)}. No Building new index.")
+            logger.info(f"Could  load from blob storage: {str(e)}. No Building new index.")
         except Exception as e:
-            logging.info(f"Could not load from blob storage: {str(e)}. Building new index.")
+            logger.info(f"Could not load from blob storage: {str(e)}. Building new index.")
             self.knowledge_base = KnowledgeBase(self.load_files_contents('data'))
             self.knowledge_base.build_retriever(self.connection_string, self.container_name)
 
@@ -161,7 +165,7 @@ class RAG_Azure:
                     try:
                         content_parts.append(file_handlers[file_ext](filepath))
                     except Exception as e:
-                        logging.error(f"Error loading {filepath}: {e}")
+                        logger.error(f"Error loading {filepath}: {e}")
             return "\n".join(content_parts)  
 
     def process_query(self, query):
