@@ -84,7 +84,7 @@ class RAG_Azure:
         logger.info(f"knowledge base from empty string is well done")
         try:
             self.knowledge_base.retriever = self._load_from_blob().as_retriever()
-            logger.info(f"Could  load from blob storage: {str(e)}. No Building new index.")
+            logger.info(f"load from blob storage is done. No Building new index.")
         except Exception as e:
             logger.info(f"Could not load from blob storage: {str(e)}. Building new index.")
             self.knowledge_base = KnowledgeBase(self.load_files_contents('data'))
