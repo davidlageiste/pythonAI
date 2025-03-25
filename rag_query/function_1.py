@@ -123,6 +123,9 @@ class RAG_Azure:
             if not docstore_blob_client.exists():
                 logger.error("Le blob 'docstore.pkl' est introuvable.")
                 raise FileNotFoundError("Le blob 'docstore.pkl' est introuvable.")
+            if not docstore_id_blob_client.exists():
+                logger.error("Le blob 'index_to_docstore_id.pkl' est introuvable.")
+                raise FileNotFoundError("Le blob 'index_to_docstore_id.pkl' est introuvable.")
     
             # Téléchargement et écriture des fichiers temporaires
             with tempfile.NamedTemporaryFile(delete=False) as temp_index:
@@ -161,7 +164,7 @@ class RAG_Azure:
             os.unlink(temp_docstore_id.name)
     
             logger.info("Chargement terminé avec succès.")
-            return FAISS(self.knowledge_base.embeddings.embed_query, index,docstore ,docstore_id)
+            return FAISS(self.knowledge_base.embeddings, index,docstore ,docstore_id)
     
         except Exception as e:
             logger.exception(f"Erreur lors du chargement des blobs : {e}")
