@@ -128,7 +128,11 @@ class RAG_Azure:
         
                 # Chargement de l'index FAISS depuis les données en mémoire
                 logger.info("Chargement de l'index FAISS depuis la mémoire.")
-                index = faiss.deserialize_index(index_data)
+                with tempfile.NamedTemporaryFile(delete=False) as tmp_index:
+                        tmp_index.write(index_data)
+                        tmp_index_path = tmp_index.name
+                index = faiss.read_index(tmp_index_path)
+                os.unlink(tmp_index_path)  # Nettoyage immédiat
         
                 # Chargement du docstore depuis la mémoire
                 logger.info("Chargement du docstore depuis la mémoire.")
