@@ -15,7 +15,7 @@ import tempfile
 import pickle
 from azure.storage.blob import BlobServiceClient
 
-os.environ['FAISS_NO_GPU'] = '1'
+os.environ['FAISS_NO_GPU'] = '0'
 # Configuration du logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -66,13 +66,6 @@ class RAG_Azure:
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
         self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         self.llm_model=llm_model
-        self.custom_prompt_template = (
-                    f"Vous êtes une assistante virtuelle spécialisée pour un cabinet de radiologie médicale.\n"
-                    f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
-                    f"Question du patient : {query}\n\n"
-                    f"Répondez uniquement à la question posée, de manière claire et concise."
-                )
-        
         try:
             self.knowledge_base = KnowledgeBase('')
             logger.info(f"knowledge base from empty string is well done")
@@ -132,11 +125,17 @@ class RAG_Azure:
             return "\n".join(content_parts)
         
     def answer_query(self, query, context):
+        custom_prompt_template = (
+                    f"Vous êtes une assistante virtuelle spécialisée pour un cabinet de radiologie médicale.\n"
+                    f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
+                    f"Question du patient : {query}\n\n"
+                    f"Répondez uniquement à la question posée, de manière claire et concise."
+                )
         try:
                 completion = self.client.chat.completions.create(
                     model='gpt-3.5-turbo',
                     messages=[
-                        {"role": "system", "content": self.custom_prompt_template},
+                        {"role": "system", "content": custom_prompt_template},
                         {"role": "user", "content": query}
                     ],
                 )
