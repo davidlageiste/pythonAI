@@ -128,7 +128,7 @@ class RAG_Azure:
         
                 # Chargement de l'index FAISS depuis les données en mémoire
                 logger.info("Chargement de l'index FAISS depuis la mémoire.")
-                index = faiss.read_index(io.BytesIO(index_data))
+                index = faiss.deserialize_index(index_data)
         
                 # Chargement du docstore depuis la mémoire
                 logger.info("Chargement du docstore depuis la mémoire.")
