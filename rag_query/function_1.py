@@ -22,18 +22,27 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
     def __init__(self, text_data):
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002",api_key= os.environ["OPENAI_API_KEY"])
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size =200, chunk_overlap =50,separators=["\n\n","\n"])
+        self.embeddings = None
+        self.text_splitter = None 
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
         self.retriever = None
+        
+    @property
+    def embeddings(self):
+        if self._embeddings is None:
+            self._embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=os.environ["OPENAI_API_KEY"])
+        return self._embeddings
         
     def convert_texts_to_documents(self, texts):
         return [Document(page_content=text) for text in texts]
         
     def text_split(self , extracted_data):
+        self.text_splitter=RecursiveCharacterTextSplitter(chunk_size =200, chunk_overlap =50,separators=["\n\n","\n"])
         return self.text_splitter.split_text(extracted_data)
 
     def build_retriever(self, connection_string, container_name):
+        if not self.documents:
+            return
         store = FAISS.from_documents(self.documents, self.embeddings)
         self._save_to_blob(store, connection_string, container_name)
         self.retriever = store.as_retriever()
