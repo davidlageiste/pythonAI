@@ -17,9 +17,8 @@ import pickle
 from azure.storage.blob import BlobServiceClient
 from openai import AzureOpenAI
 
-os.environ['FAISS_NO_GPU'] = '0'
-# Configuration du logger
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+os.environ['FAISS_NO_GPU'] = '1'
+
 logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
