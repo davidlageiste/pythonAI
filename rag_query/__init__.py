@@ -3,7 +3,7 @@ import logging
 import os
 import json
 from .function_1 import RAG_Azure
-
+rag_system = RAG_Azure()
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
@@ -18,7 +18,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        rag_system = RAG_Azure()
         result = rag_system.process_query(query)
 
         return func.HttpResponse(
