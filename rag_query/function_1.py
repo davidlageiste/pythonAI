@@ -2,6 +2,7 @@ import azure.functions as func
 import logging
 from langchain.document_loaders import PyPDFLoader, DirectoryLoader, TextLoader, JSONLoader
 from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import AzureOpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 import faiss
@@ -23,7 +24,12 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
     def __init__(self, text_data):
-        self.embeddings = self._embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=os.environ["OPENAI_API_KEY"])
+        self.embeddings = AzureOpenAIEmbeddings(
+            azure_deployment="text-embedding-ada-002",  # Nom de votre déploiement d'embeddings
+            openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            openai_api_version="2023-05-15"  
+        )
         self.text_splitter = None 
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
         self.retriever = None
