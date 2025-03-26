@@ -72,8 +72,7 @@ class RAG_Azure:
         self.client = AzureOpenAI(
           azure_endpoint = os.environ["AZURE_OPENAI_ENDPOINT"],
           api_key= os.environ["AZURE_OPENAI_API_KEY"],
-          api_version="2024-05-01-preview",
-          deployment_name ="gpt-35-turbo"
+          api_version="2024-05-01-preview"
         )
         self.llm_model=llm_model
         try:
@@ -143,7 +142,7 @@ class RAG_Azure:
                 )
         try:
                 completion = self.client.chat.completions.create(
-                    model='gpt-3.5-turbo',
+                    model=self.llm_model,
                     messages=[
                         {"role": "system", "content": custom_prompt_template},
                         {"role": "user", "content": query}
