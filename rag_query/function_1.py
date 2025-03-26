@@ -14,6 +14,7 @@ import json
 import tempfile
 import pickle
 from azure.storage.blob import BlobServiceClient
+from openai import AzureOpenAI
 
 os.environ['FAISS_NO_GPU'] = '0'
 # Configuration du logger
@@ -22,16 +23,10 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
     def __init__(self, text_data):
-        self.embeddings = None
+        self.embeddings = self._embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=os.environ["OPENAI_API_KEY"])
         self.text_splitter = None 
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
         self.retriever = None
-        
-    @property
-    def embeddings(self):
-        if self._embeddings is None:
-            self._embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=os.environ["OPENAI_API_KEY"])
-        return self._embeddings
         
     def convert_texts_to_documents(self, texts):
         return [Document(page_content=text) for text in texts]
@@ -70,10 +65,16 @@ class KnowledgeBase:
 
 
 class RAG_Azure:
-    def __init__(self , llm_model="gpt-3.5-turbo"):
+    def __init__(self , llm_model="gpt-35-turbo"):
         self.connection_string = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
-        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        #self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        self.client = AzureOpenAI(
+          azure_endpoint = os.environ("AZURE_OPENAI_ENDPOINT"),
+          api_key= os.environ("AZURE_OPENAI_API_KEY"),
+          api_version="2024-05-01-preview",
+          deployment_name ="gpt-35-turbo"
+        )
         self.llm_model=llm_model
         try:
             self.knowledge_base = KnowledgeBase('')
