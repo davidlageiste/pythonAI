@@ -28,7 +28,7 @@ class KnowledgeBase:
             azure_deployment="text-embedding-ada-002",  # Nom de votre déploiement d'embeddings
             openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            openai_api_version="2023-05-15"  
+            openai_api_version="2023-05-15"  ,chunk_size=1
         )
         self.text_splitter = None 
         self.documents=self.convert_texts_to_documents(self.text_split(text_data)) if text_data else []
