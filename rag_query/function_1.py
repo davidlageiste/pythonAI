@@ -70,8 +70,8 @@ class RAG_Azure:
         self.container_name = os.environ["AZURE_STORAGE_CONTAINER_NAME"]
         #self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         self.client = AzureOpenAI(
-          azure_endpoint = os.environ("AZURE_OPENAI_ENDPOINT"),
-          api_key= os.environ("AZURE_OPENAI_API_KEY"),
+          azure_endpoint = os.environ["AZURE_OPENAI_ENDPOINT"],
+          api_key= os.environ["AZURE_OPENAI_API_KEY"],
           api_version="2024-05-01-preview",
           deployment_name ="gpt-35-turbo"
         )
