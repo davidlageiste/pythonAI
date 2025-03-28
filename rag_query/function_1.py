@@ -140,10 +140,11 @@ class RAG_Azure:
         
     def answer_query(self, query, context):
         custom_prompt_template = (
-                    f"Vous êtes une assistante virtuelle spécialisée pour un cabinet de radiologie médicale.\n"
+                    f"Vous êtes une assistante virtuelle conçue pour répondre uniquement aux questions relatives à l'imagerie médicale. \n"
                     f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
                     f"Question du patient : {query}\n\n"
-                    f"Répondez uniquement à la question posée, de manière claire et concise."
+                    f"Répondez uniquement à la question posée, de manière claire et concise.\n"
+                    f"Si la question est hors sujet, dites : « Je suis une assistante en imagerie médicale et ne peux répondre qu'à ce domaine.»"
                 )
         try:
                 completion = self.client.chat.completions.create(
