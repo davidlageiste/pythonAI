@@ -141,9 +141,10 @@ class RAG_Azure:
     def answer_query(self, query, context):
         custom_prompt_template = (
                     f"Vous êtes une assistante virtuelle conçue pour répondre uniquement aux questions relatives à l'imagerie médicale. \n"
-                    f"Voici des informations pertinentes extraites de notre base de connaissances :\n{context}\n\n"
+                    f"Voici quelques informations qui peuvent vous aider à répondre :\n{context}\n\n"
                     f"Question du patient : {query}\n\n"
-                    f"Répondez uniquement à la question posée, de manière claire et concise avec un language simple et un ton familier comme à l'oral.\n"
+                    f"Répondez uniquement à la question posée, de manière claire et concise avec un language simple et familier comme si vous vous adressiez oralement à la personne.\n"
+                    f"Utilisez des connecteurs logiques appropriés à la place de la ponctuation afin d'assurer une transition fluide entre les idées."
                     f"Si la question est hors sujet, dites : « Je suis une assistante en imagerie médicale et ne peux répondre qu'à ce domaine.»"
                 )
         try:
